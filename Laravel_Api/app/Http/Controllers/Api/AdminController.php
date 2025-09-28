@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Services\AuditLogger;
-use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
@@ -41,7 +40,7 @@ class AdminController extends Controller
             'role' => User::ROLE_ADMIN,
         ]);
 
-        AuditLogger::log('created_admin',$newAdmin,null,$newAdmin);
+        AuditLogger::log('created_admin',$newAdmin,null,$newAdmin->toArray());
 
         return response()->json([
             'status' => true,
@@ -54,10 +53,10 @@ class AdminController extends Controller
     /**
      * Show a single admin
      */
-    public function show(User $user)
+    public function show(User $admin)
     {
         //
-        if($user->role !== User::ROLE_ADMIN){
+        if($admin->role !== User::ROLE_ADMIN){
             return response()->json([
                 'status'=> false,
                 'message'=> 'User is not an admin'
@@ -67,57 +66,57 @@ class AdminController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'admin data',
-            'data' => $user,
+            'data' => $admin,
         ]);
     }
 
     /**
      * update admin
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $admin)
     {
-        if($user->role !== User::ROLE_ADMIN){
+        if($admin->role !== User::ROLE_ADMIN){
             return response()->json([
                 'status'=> false,
                 'message'=> 'User is not an admin'
             ],400);
         }
 
-        $oldData = $user->toArray();
+        $oldData = $admin->toArray();
 
         $request->validate([
             'name' => 'sometimes|string|max:50',
-            'email' => 'sometimes|email|unique:users,email'.$user->id,
+            'email' => 'sometimes|email|unique:users,email'.$admin->id,
         ]);
 
-        $user->update($request->only(['name','email']));
+        $admin->update($request->only(['name','email']));
 
-        AuditLogger::log('updated_admin',$user,$oldData,$user->toArray());
+        AuditLogger::log('updated_admin',$admin,$oldData,$admin->toArray());
 
         return response()->json([
             'status' => true,
             'message' => 'Admin updated successfully',
-            'data' => $user,
+            'data' => $admin,
         ]);
     }
 
     /**
      * Delete admin
      */
-    public function destroy(User $user)
+    public function destroy(User $admin)
     {
-        if($user->role !== User::ROLE_ADMIN){
+        if($admin->role !== User::ROLE_ADMIN){
             return response()->json([
                 'status'=> false,
                 'message'=> 'User is not an admin'
             ],400);
         }
 
-        $oldData = $user->toArray();
+        $oldData = $admin->toArray();
 
-        $user->delete();
+        $admin->delete();
 
-        AuditLogger::log('delete_admin',$user,$oldData,$user->toArray());
+        AuditLogger::log('delete_admin',$admin,$oldData,$admin->toArray());
 
         return response()->json([
             'status' => true,

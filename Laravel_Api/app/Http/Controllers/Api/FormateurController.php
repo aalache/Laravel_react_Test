@@ -3,9 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Services\AuditLogger;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Hash;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class FormateurController extends Controller
 {
@@ -24,71 +30,84 @@ class FormateurController extends Controller
         $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users',
-            'password' => 'required|min:6',
+            'password' => 'required|min:8',
         ]);
 
-        $formateur = User::create([
+        $newFormateur = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
             'role'     => User::ROLE_FORMATEUR,
         ]);
 
+        AuditLogger::log('create_formateur',$newFormateur,null,$newFormateur->toArray());
+
         return response()->json([
             'status'  => true,
             'message' => 'Formateur created successfully',
-            'data'    => $formateur,
+            'data'    => new UserResource($newFormateur),
         ], 201);
     }
 
-    public function show(User $user)
-    {
-        if ($user->role !== User::ROLE_FORMATEUR) {
+    public function show(?User $formateur)
+    {   
+        if (!$formateur || $formateur->role !== User::ROLE_FORMATEUR) {
             return response()->json([
                 'status'  => false,
-                'message' => 'Not a formateur',
-            ], 400);
+                'message' => 'Formateur not found',
+            ], 404);
         }
 
         return response()->json([
             'status' => true,
-            'data'   => $user,
+            'data'   => new UserResource($formateur),
         ]);
+        
     }
 
-    public function update(Request $request, User $user)
+
+    public function update(Request $request, User $formateur)
     {
-        if ($user->role !== User::ROLE_FORMATEUR) {
+        if ($formateur->role !== User::ROLE_FORMATEUR) {
             return response()->json([
                 'status'  => false,
                 'message' => 'Not a formateur',
             ], 400);
         }
 
+        $oldData = $formateur->toArray();
+
         $request->validate([
             'name'  => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $user->id,
+            'email' => 'sometimes|email|unique:users,email,' . $formateur->id,
         ]);
 
-        $user->update($request->only(['name', 'email']));
+
+        $formateur->update($request->only(['name', 'email']));
+
+        AuditLogger::log('update_formateur',$formateur,$oldData,$formateur->toArray());
 
         return response()->json([
             'status'  => true,
             'message' => 'Formateur updated successfully',
-            'data'    => $user,
+            'data'    => new UserResource($formateur),
         ]);
     }
 
-    public function destroy(User $user)
+    public function destroy(User $formateur)
     {
-        if ($user->role !== User::ROLE_FORMATEUR) {
+        if ($formateur->role !== User::ROLE_FORMATEUR) {
             return response()->json([
                 'status'  => false,
                 'message' => 'Not a formateur',
             ], 400);
         }
 
-        $user->delete();
+        $oldData = $formateur->toArray();
+
+        $formateur->delete();
+
+        AuditLogger::log("delete_formateur",$formateur,$oldData,$formateur->toArray());
 
         return response()->json([
             'status'  => true,

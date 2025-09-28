@@ -55,7 +55,9 @@ class AuthController extends Controller
         // Generate token
         $token = $user->createToken("apiToken")->plainTextToken;
 
-        AuditLogger::log('login', Auth::user());
+        // dd(auth()->user());die;
+        
+        AuditLogger::log('login', $user);
 
         return response()->json([
             'status'  => true,
