@@ -107,7 +107,7 @@ class FormateurController extends Controller
 
         $formateur->delete();
 
-        AuditLogger::log("delete_formateur",$formateur,$oldData,$formateur->toArray());
+        AuditLogger::log("delete_formateur",$formateur,$oldData,null);
 
         return response()->json([
             'status'  => true,

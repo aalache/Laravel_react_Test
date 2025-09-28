@@ -116,7 +116,7 @@ class AdminController extends Controller
 
         $admin->delete();
 
-        AuditLogger::log('delete_admin',$admin,$oldData,$admin->toArray());
+        AuditLogger::log('delete_admin',$admin,$oldData,null);
 
         return response()->json([
             'status' => true,
