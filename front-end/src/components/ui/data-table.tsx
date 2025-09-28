@@ -32,9 +32,32 @@ export default function DataView({view}:Props) {
             ? "http://localhost:8000/api/admins"
             : "http://localhost:8000/api/formateurs";
 
-        axios.get(url)
-            .then((res) => setUsers(res.data.data))
-            .catch((err) => console.log(err));
+        const credentials  = view === "admins" 
+                             ? {email: 'test@example.com', password : 'test'}
+                             : {email: 'oaalache@gmail.com', password: 'a.omar2002'} 
+                                       
+
+        // get token from login 
+        axios.post('http://localhost:8000/api/login', credentials)
+        .then(res => {
+            const token = res.data.token;
+            localStorage.setItem('token', token);
+        })
+        .catch(err => {
+            console.error(err.response.data);
+        });
+
+        const token = localStorage.getItem('token');
+
+        axios.get(url,{
+            headers:{
+                Authorization: `Bearer ${token}`,
+            }   
+        })
+        .then((res) => setUsers(res.data.data))
+        .catch((err) => console.log(err));
+
+
     },[view]);
     
     return (
@@ -73,20 +96,20 @@ export default function DataView({view}:Props) {
             <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
 
             <Column
-                field="firstName"
-                header="First Name"
-                sortable
-                className=" py-4"
-            />
-            <Column
-                field="lastName"
-                header="Last Name"
+                field="name"
+                header="Name"
                 sortable
                 className=" py-4"
             />
             <Column
                 field="email"
                 header="Email"
+                sortable
+                className=" py-4"
+            />
+            <Column
+                field="role"
+                header="Role"
                 sortable
                 className=" py-4"
             />
@@ -100,7 +123,8 @@ export default function DataView({view}:Props) {
             {view === "formateurs" ? (
                 <Column field="formations" header="Formations" className=" py-4" />
             ) : (
-                <Column field="role" header="Role" className=" py-4" />
+                // <Column field="role" header="Role" className=" py-4" />
+                <></>
             )}
         </DataTable>
 
